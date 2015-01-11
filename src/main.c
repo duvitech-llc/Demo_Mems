@@ -65,6 +65,7 @@ char dataOut[256];
 volatile float PRESSURE_Value;
 volatile float HUMIDITY_Value;
 volatile float TEMPERATURE_Value;
+volatile float TEMPERATURE2_Value;
 
 /* Private functions ---------------------------------------------------------*/
 static void floatToInt(float in, int32_t *out_int, int32_t *out_dec, int32_t dec_prec);
@@ -102,12 +103,20 @@ int main(void)
   MX_I2C1_Init();
   MX_USART2_UART_Init();
 
-  printf("Copyright 2015 Duvitech\n\r");
-  printf("initializing temp sensor...\n\r");
-  BSP_HUM_TEMP_Init();
-  if( BSP_HUM_TEMP_CheckID() != HUM_TEMP_OK)
+  printf("\n\r\n\rDuvitech 2015\n\r");
+  printf("George Vigelette\n\r");
+  printf("gvigelet@duvitech.com\n\r\n\r");
+  printf("initializing temperature sensor...\n\r");
+  if(BSP_HUM_TEMP_Init() != HUM_TEMP_OK ||
+     BSP_HUM_TEMP_CheckID() != HUM_TEMP_OK)
   {
-	  printf("problem with sensor\n\r");
+	  printf("problem with temperature sensor\n\r");
+  }
+  printf("initializing pressure sensor...\n\r");
+  if(BSP_PRESSURE_Init() != PRESSURE_OK ||
+		  BSP_PRESSURE_CheckID() != PRESSURE_OK)
+  {
+	  printf("problem with pressure sensor\n\r");
   }
   printf("Running...\n\r");
   while (1)
@@ -127,7 +136,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   if (GPIO_Pin == GPIO_PIN_13)
   {
-	    int32_t d1, d2, d3, d4;
+	    int32_t d1, d2, d3, d4, d5, d6, d7, d8;
 
 	    if(BSP_HUM_TEMP_isInitialized()) {
 	        BSP_HUM_TEMP_GetHumidity((float *)&HUMIDITY_Value);
@@ -135,7 +144,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	        floatToInt(HUMIDITY_Value, &d1, &d2, 2);
 	        float tempF = celsius2fahrenheit(TEMPERATURE_Value);
 	        floatToInt(tempF, &d3, &d4, 2);
-            sprintf(dataOut, "HUM: %d.%02d     TEMP: %d.%02d\n\r", (int)d1, (int)d2, (int)d3, (int)d4);
+            sprintf(dataOut, "HUM: %d.%02d rH     TEMP: %d.%02d (f)\n\r", (int)d1, (int)d2, (int)d3, (int)d4);
+	        printf(dataOut);
+	    }
+
+	    if(BSP_PRESSURE_isInitialized())
+	    {
+	        BSP_PRESSURE_GetPressure((float *)&PRESSURE_Value);
+	        BSP_PRESSURE_GetTemperature((float *)&TEMPERATURE2_Value);
+	        floatToInt(PRESSURE_Value, &d5, &d6, 2);
+	        float tempF2 = celsius2fahrenheit(TEMPERATURE2_Value);
+	        floatToInt(tempF2, &d7, &d8, 2);
+            sprintf(dataOut, "PRESS: %d.%02d hPa     TEMP: %d.%02d (f)\n\r", (int)d5, (int)d6, (int)d7, (int)d8);
 	        printf(dataOut);
 	    }
   }

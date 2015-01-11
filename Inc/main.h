@@ -44,6 +44,7 @@
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_nucleo.h"
 #include "X_NUCLEO_IKS01A1\x_nucleo_iks01a1_hum_temp.h"
+#include "X_NUCLEO_IKS01A1/x_nucleo_iks01a1_pressure.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
