@@ -61,7 +61,9 @@ I2C_HandleTypeDef hi2c1;
 UART_HandleTypeDef huart2;
 char dataOut[256];
 
-
+volatile AxesRaw_TypeDef ACC_Value;
+volatile AxesRaw_TypeDef GYR_Value;
+volatile AxesRaw_TypeDef MAG_Value;
 volatile float PRESSURE_Value;
 volatile float HUMIDITY_Value;
 volatile float TEMPERATURE_Value;
@@ -106,18 +108,35 @@ int main(void)
   printf("\n\r\n\rDuvitech 2015\n\r");
   printf("George Vigelette\n\r");
   printf("gvigelet@duvitech.com\n\r\n\r");
+
   printf("initializing temperature sensor...\n\r");
   if(BSP_HUM_TEMP_Init() != HUM_TEMP_OK ||
-     BSP_HUM_TEMP_CheckID() != HUM_TEMP_OK)
+		  BSP_HUM_TEMP_CheckID() != HUM_TEMP_OK)
   {
 	  printf("problem with temperature sensor\n\r");
   }
+
   printf("initializing pressure sensor...\n\r");
   if(BSP_PRESSURE_Init() != PRESSURE_OK ||
 		  BSP_PRESSURE_CheckID() != PRESSURE_OK)
   {
 	  printf("problem with pressure sensor\n\r");
   }
+
+  printf("initializing magnetometer sensor...\n\r");
+  if(BSP_MAGNETO_Init() != MAGNETO_OK ||
+		  BSP_MAGNETO_Check_M_ID() != MAGNETO_OK)
+  {
+	  printf("problem with magnetometer sensor\n\r");
+  }
+
+  printf("initializing imu sensor...\n\r");
+    if(BSP_IMU_6AXES_Init() != IMU_6AXES_OK ||
+    		BSP_IMU_6AXES_Check_XG_ID() != IMU_6AXES_OK)
+    {
+  	  printf("problem with imu sensor\n\r");
+    }
+
   printf("Running...\n\r");
   while (1)
   {
@@ -137,6 +156,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   if (GPIO_Pin == GPIO_PIN_13)
   {
 	    int32_t d1, d2, d3, d4, d5, d6, d7, d8;
+	    int32_t data[3];
+	    int32_t gdata[6];
 
 	    if(BSP_HUM_TEMP_isInitialized()) {
 	        BSP_HUM_TEMP_GetHumidity((float *)&HUMIDITY_Value);
@@ -157,6 +178,35 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	        floatToInt(tempF2, &d7, &d8, 2);
             sprintf(dataOut, "PRESS: %d.%02d hPa     TEMP: %d.%02d (f)\n\r", (int)d5, (int)d6, (int)d7, (int)d8);
 	        printf(dataOut);
+	    }
+
+	    if(BSP_MAGNETO_isInitialized())
+	    {
+	        BSP_MAGNETO_M_GetAxesRaw((AxesRaw_TypeDef *)&MAG_Value);
+            data[0] = MAG_Value.AXIS_X;
+            data[1] = MAG_Value.AXIS_Y;
+            data[2] = MAG_Value.AXIS_Z;
+
+            sprintf(dataOut, "MAG_X: %d, MAG_Y: %d, MAG_Z: %d\n\r", (int)data[0], (int)data[1], (int)data[2]);
+	        printf(dataOut);
+	    }
+
+
+	    if(BSP_IMU_6AXES_isInitialized()) {
+	        BSP_IMU_6AXES_X_GetAxesRaw((AxesRaw_TypeDef *)&ACC_Value);
+	        BSP_IMU_6AXES_G_GetAxesRaw((AxesRaw_TypeDef *)&GYR_Value);
+            gdata[0] = ACC_Value.AXIS_X;
+            gdata[1] = ACC_Value.AXIS_Y;
+            gdata[2] = ACC_Value.AXIS_Z;
+            gdata[3] = GYR_Value.AXIS_X;
+            gdata[4] = GYR_Value.AXIS_Y;
+            gdata[5] = GYR_Value.AXIS_Z;
+
+            sprintf(dataOut, "ACC_X: %d, ACC_Y: %d, ACC_Z: %d\n\r", (int)gdata[0], (int)gdata[1], (int)gdata[2]);
+	        printf(dataOut);
+            sprintf(dataOut, "GYR_X: %d, GYR_Y: %d, GYR_Z: %d\n\r", (int)gdata[3], (int)gdata[4], (int)gdata[5]);
+	        printf(dataOut);
+
 	    }
   }
 }

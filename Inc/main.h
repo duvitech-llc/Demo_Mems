@@ -45,6 +45,8 @@
 #include "stm32f0xx_nucleo.h"
 #include "X_NUCLEO_IKS01A1\x_nucleo_iks01a1_hum_temp.h"
 #include "X_NUCLEO_IKS01A1/x_nucleo_iks01a1_pressure.h"
+#include "X_NUCLEO_IKS01A1/x_nucleo_iks01a1_magneto.h"
+#include "X_NUCLEO_IKS01A1/x_nucleo_iks01a1_imu_6axes.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
