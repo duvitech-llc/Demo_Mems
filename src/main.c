@@ -59,6 +59,7 @@ static void SystemClock_Config(void);
 I2C_HandleTypeDef hi2c1;
 
 UART_HandleTypeDef huart2;
+char dataOut[256];
 
 
 volatile float PRESSURE_Value;
@@ -66,6 +67,7 @@ volatile float HUMIDITY_Value;
 volatile float TEMPERATURE_Value;
 
 /* Private functions ---------------------------------------------------------*/
+static void floatToInt(float in, int32_t *out_int, int32_t *out_dec, int32_t dec_prec);
 
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
@@ -115,6 +117,44 @@ int main(void)
     HAL_Delay(100);
   }
 }
+
+/**
+  * @brief EXTI line detection callbacks
+  * @param GPIO_Pin: Specifies the pins connected EXTI line
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if (GPIO_Pin == GPIO_PIN_13)
+  {
+	    int32_t d1, d2, d3, d4;
+
+	    if(BSP_HUM_TEMP_isInitialized()) {
+	        BSP_HUM_TEMP_GetHumidity((float *)&HUMIDITY_Value);
+	        BSP_HUM_TEMP_GetTemperature((float *)&TEMPERATURE_Value);
+	        floatToInt(HUMIDITY_Value, &d1, &d2, 2);
+	        floatToInt(TEMPERATURE_Value, &d3, &d4, 2);
+            sprintf(dataOut, "HUM: %d.%02d     TEMP: %d.%02d\n\r", (int)d1, (int)d2, (int)d3, (int)d4);
+	        printf(dataOut);
+	    }
+  }
+}
+
+/**
+ * @brief  Splits a float into two integer values.
+ * @param  in the float value as input
+ * @param  out_int the pointer to the integer part as output
+ * @param  out_dec the pointer to the decimal part as output
+ * @param  dec_prec the decimal precision to be used
+ * @retval None
+ */
+static void floatToInt(float in, int32_t *out_int, int32_t *out_dec, int32_t dec_prec)
+{
+    *out_int = (int32_t)in;
+    in = in - (float)(*out_int);
+    *out_dec = (int32_t)trunc(in*pow(10,dec_prec));
+}
+
 
 /** System Clock Configuration
 */
@@ -207,9 +247,13 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PC13 */
   GPIO_InitStruct.Pin = GPIO_PIN_13;
-  GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /* Enable and set EXTI line 4_15 Interrupt to the lowest priority */
+  HAL_NVIC_SetPriority(EXTI4_15_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ(EXTI4_15_IRQn);
 
   /*Configure GPIO pin : PA5 */
   GPIO_InitStruct.Pin = GPIO_PIN_5;
