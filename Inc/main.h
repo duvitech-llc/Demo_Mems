@@ -43,10 +43,22 @@
 #include "stdint.h"
 #include "stm32f0xx_hal.h"
 #include "stm32f0xx_nucleo.h"
+#include "X_NUCLEO_IKS01A1\x_nucleo_iks01a1_hum_temp.h"
 
 /* Exported types ------------------------------------------------------------*/
 /* Exported constants --------------------------------------------------------*/
 /* Exported macro ------------------------------------------------------------*/
+/* Exported defines ------------------------------------------------------------*/
+
+// Enable sensor masks
+#define PRESSURE_SENSOR                         0x00000001
+#define TEMPERATURE_SENSOR                      0x00000002
+#define HUMIDITY_SENSOR                         0x00000004
+#define UV_SENSOR                               0x00000008  // for future use
+#define ACCELEROMETER_SENSOR                    0x00000010
+#define GYROSCOPE_SENSOR                        0x00000020
+#define MAGNETIC_SENSOR                         0x00000040
+
 /* Exported functions ------------------------------------------------------- */
 
 #endif /* __MAIN_H */

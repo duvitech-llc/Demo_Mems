@@ -54,13 +54,22 @@
 /* Private define ------------------------------------------------------------*/
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
-static GPIO_InitTypeDef  GPIO_InitStruct;
-
 /* Private function prototypes -----------------------------------------------*/
 static void SystemClock_Config(void);
-static void Error_Handler(void);
+I2C_HandleTypeDef hi2c1;
+
+UART_HandleTypeDef huart2;
+
+
+volatile float PRESSURE_Value;
+volatile float HUMIDITY_Value;
+volatile float TEMPERATURE_Value;
 
 /* Private functions ---------------------------------------------------------*/
+
+static void MX_GPIO_Init(void);
+static void MX_I2C1_Init(void);
+static void MX_USART2_UART_Init(void);
 
 /**
   * @brief  Main program
@@ -85,19 +94,20 @@ int main(void)
 
   /* Configure the system clock to 48 MHz */
   SystemClock_Config();
-  
-  /* -1- Enable each GPIO Clock (to be able to program the configuration registers) */
-  LED2_GPIO_CLK_ENABLE();
 
-  /* -2- Configure IOs in output push-pull mode to drive external LEDs */
-  GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull  = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_HIGH;
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_I2C1_Init();
+  MX_USART2_UART_Init();
 
-  GPIO_InitStruct.Pin = LED2_PIN;
-  HAL_GPIO_Init(LED2_GPIO_PORT, &GPIO_InitStruct);
-
-  /* -3- Toggle IOs in an infinite loop */
+  printf("Copyright 2015 Duvitech\n\r");
+  printf("initializing temp sensor...\n\r");
+  BSP_HUM_TEMP_Init();
+  if( BSP_HUM_TEMP_CheckID() != HUM_TEMP_OK)
+  {
+	  printf("problem with sensor\n\r");
+  }
+  printf("Running...\n\r");
   while (1)
   {
     HAL_GPIO_TogglePin(LED2_GPIO_PORT, LED2_PIN);
@@ -106,59 +116,110 @@ int main(void)
   }
 }
 
-/**
-  * @brief  System Clock Configuration
-  *         The system Clock is configured as follow : 
-  *            System Clock source            = PLL (HSI/2)
-  *            SYSCLK(Hz)                     = 48000000
-  *            HCLK(Hz)                       = 48000000
-  *            AHB Prescaler                  = 1
-  *            APB1 Prescaler                 = 1
-  *            HSI Frequency(Hz)              = 8000000
-  *            PREDIV                         = 1
-  *            PLLMUL                         = 12
-  *            Flash Latency(WS)              = 1
-  * @param  None
-  * @retval None
-  */
-static void SystemClock_Config(void)
+/** System Clock Configuration
+*/
+void SystemClock_Config(void)
 {
-  RCC_ClkInitTypeDef RCC_ClkInitStruct;
+
   RCC_OscInitTypeDef RCC_OscInitStruct;
-  
-  /* No HSE Oscillator on Nucleo, Activate PLL with HSI/2 as source */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_NONE;
+  RCC_ClkInitTypeDef RCC_ClkInitStruct;
+  RCC_PeriphCLKInitTypeDef PeriphClkInit;
+
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = 16;
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PREDIV = RCC_PREDIV_DIV1;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL12;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct)!= HAL_OK)
-  {
-    Error_Handler();
-  }
+  RCC_OscInitStruct.PLL.PREDIV = RCC_PREDIV_DIV1;
+  HAL_RCC_OscConfig(&RCC_OscInitStruct);
 
-  /* Select PLL as system clock source and configure the HCLK, PCLK1 clocks dividers */
-  RCC_ClkInitStruct.ClockType = (RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_PCLK1);
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_SYSCLK;
   RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
   RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1)!= HAL_OK)
-  {
-    Error_Handler();
-  }
+  HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1);
+
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_I2C1;
+  PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
+  HAL_RCCEx_PeriphCLKConfig(&PeriphClkInit);
+
+  __SYSCFG_CLK_ENABLE();
+
 }
-/**
-  * @brief  This function is executed in case of error occurrence.
-  * @param  None
-  * @retval None
-  */
-static void Error_Handler(void)
+
+/* I2C1 init function */
+void MX_I2C1_Init(void)
 {
-  /* User may add here some code to deal with this error */
-  while(1)
-  {
-  }
+
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.Timing = 0x2000090E;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLED;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.OwnAddress2Masks = I2C_OA2_NOMASK;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLED;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLED;
+  HAL_I2C_Init(&hi2c1);
+
+    /**Configure Analogue filter
+    */
+  HAL_I2CEx_AnalogFilter_Config(&hi2c1, I2C_ANALOGFILTER_ENABLED);
+
 }
+
+/* USART2 init function */
+void MX_USART2_UART_Init(void)
+{
+
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 57600;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONEBIT_SAMPLING_DISABLED ;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  HAL_UART_Init(&huart2);
+
+}
+
+/** Configure pins as
+        * Analog
+        * Input
+        * Output
+        * EVENT_OUT
+        * EXTI
+*/
+void MX_GPIO_Init(void)
+{
+
+  GPIO_InitTypeDef GPIO_InitStruct;
+
+  /* GPIO Ports Clock Enable */
+  __GPIOC_CLK_ENABLE();
+  __GPIOF_CLK_ENABLE();
+  __GPIOA_CLK_ENABLE();
+  __GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin : PC13 */
+  GPIO_InitStruct.Pin = GPIO_PIN_13;
+  GPIO_InitStruct.Mode = GPIO_MODE_EVT_RISING;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : PA5 */
+  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+}
+
 
 #ifdef  USE_FULL_ASSERT
 

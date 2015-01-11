@@ -1,26 +1,12 @@
 /**
   ******************************************************************************
-  * @file    stm32f0xx_hal_msp_template.c
-  * @author  MCD Application Team
-  * @version V1.1.0
-  * @date    03-Oct-2014
-  * @brief   HAL MSP module.
-  *          This file template is located in the HAL folder and should be copied 
-  *          to the user folder.
-  *         
-  @verbatim
- ===============================================================================
-                     ##### How to use this driver #####
- ===============================================================================
-    [..]
-    This file is generated automatically by MicroXplorer and eventually modified 
-    by the user
-
-  @endverbatim
+  * File Name          : stm32f0xx_hal_msp.c
+  * Date               : 10/01/2015 22:28:17
+  * Description        : This file provides code for the MSP Initialization
+  *                      and de-Initialization codes.
   ******************************************************************************
-  * @attention
   *
-  * <h2><center>&copy; COPYRIGHT(c) 2014 STMicroelectronics</center></h2>
+  * COPYRIGHT(c) 2015 STMicroelectronics
   *
   * Redistribution and use in source and binary forms, with or without modification,
   * are permitted provided that the following conditions are met:
@@ -45,78 +31,143 @@
   * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   *
   ******************************************************************************
-  */ 
-
+  */
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f0xx_hal.h"
 
-/** @addtogroup STM32F0xx_HAL_Driver
-  * @{
-  */
+/* USER CODE BEGIN 0 */
 
-/** @defgroup HAL_MSP HAL MSP module driver
-  * @brief HAL MSP module.
-  * @{
-  */
-
-/* Private typedef -----------------------------------------------------------*/
-/* Private define ------------------------------------------------------------*/
-/* Private macro -------------------------------------------------------------*/
-/* Private variables ---------------------------------------------------------*/
-/* Private function prototypes -----------------------------------------------*/
-/* Private functions ---------------------------------------------------------*/
-
-/** @defgroup HAL_MSP_Private_Functions HAL MSP Private Functions
-  * @{
-  */
+/* USER CODE END 0 */
 
 /**
-  * @brief  Initializes the Global MSP.
-  * @retval None
+  * Initializes the Global MSP.
   */
 void HAL_MspInit(void)
 {
-  /* NOTE : This function is generated automatically by MicroXplorer and eventually  
-            modified by the user
-   */ 
+  /* USER CODE BEGIN MspInit 0 */
+
+  /* USER CODE END MspInit 0 */
+
+  /* System interrupt init*/
+/* SysTick_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(SysTick_IRQn, 0, 0);
+
+  /* USER CODE BEGIN MspInit 1 */
+
+  /* USER CODE END MspInit 1 */
 }
 
-/**
-  * @brief  DeInitializes the Global MSP. 
-  * @retval None
-  */
-void HAL_MspDeInit(void)
+void HAL_I2C_MspInit(I2C_HandleTypeDef* hi2c)
 {
-  /* NOTE : This function is generated automatically by MicroXplorer and eventually  
-            modified by the user
-   */
+
+  GPIO_InitTypeDef GPIO_InitStruct;
+  if(hi2c->Instance==I2C1)
+  {
+  /* USER CODE BEGIN I2C1_MspInit 0 */
+
+  /* USER CODE END I2C1_MspInit 0 */
+    /* Peripheral clock enable */
+    __I2C1_CLK_ENABLE();
+
+    /**I2C1 GPIO Configuration
+    PB8     ------> I2C1_SCL
+    PB9     ------> I2C1_SDA
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_8|GPIO_PIN_9;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF1_I2C1;
+    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN I2C1_MspInit 1 */
+
+  /* USER CODE END I2C1_MspInit 1 */
+  }
+
 }
 
-/**
-  * @brief  Initializes the PPP MSP.
-  * @retval None
-  */
-void HAL_PPP_MspInit(void)
+void HAL_I2C_MspDeInit(I2C_HandleTypeDef* hi2c)
 {
-  /* NOTE : This function is generated automatically by MicroXplorer and eventually  
-            modified by the user
-   */ 
+
+  if(hi2c->Instance==I2C1)
+  {
+  /* USER CODE BEGIN I2C1_MspDeInit 0 */
+
+  /* USER CODE END I2C1_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __I2C1_CLK_DISABLE();
+
+    /**I2C1 GPIO Configuration
+    PB8     ------> I2C1_SCL
+    PB9     ------> I2C1_SDA
+    */
+    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_8|GPIO_PIN_9);
+
+  /* USER CODE BEGIN I2C1_MspDeInit 1 */
+
+  /* USER CODE END I2C1_MspDeInit 1 */
+  }
+
 }
 
-/**
-  * @brief  DeInitializes the PPP MSP. 
-  * @retval None
-  */
-void HAL_PPP_MspDeInit(void)
+void HAL_UART_MspInit(UART_HandleTypeDef* huart)
 {
-  /* NOTE : This function is generated automatically by MicroXplorer and eventually  
-            modified by the user
-   */
+
+  GPIO_InitTypeDef GPIO_InitStruct;
+  if(huart->Instance==USART2)
+  {
+  /* USER CODE BEGIN USART2_MspInit 0 */
+
+  /* USER CODE END USART2_MspInit 0 */
+    /* Peripheral clock enable */
+    __USART2_CLK_ENABLE();
+
+    /**USART2 GPIO Configuration
+    PA2     ------> USART2_TX
+    PA3     ------> USART2_RX
+    */
+    GPIO_InitStruct.Pin = GPIO_PIN_2|GPIO_PIN_3;
+    GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    GPIO_InitStruct.Speed = GPIO_SPEED_LOW;
+    GPIO_InitStruct.Alternate = GPIO_AF1_USART2;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  /* USER CODE BEGIN USART2_MspInit 1 */
+
+  /* USER CODE END USART2_MspInit 1 */
+  }
+
 }
 
-/**
-  * @}
-  */
+void HAL_UART_MspDeInit(UART_HandleTypeDef* huart)
+{
+
+  if(huart->Instance==USART2)
+  {
+  /* USER CODE BEGIN USART2_MspDeInit 0 */
+
+  /* USER CODE END USART2_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __USART2_CLK_DISABLE();
+
+    /**USART2 GPIO Configuration
+    PA2     ------> USART2_TX
+    PA3     ------> USART2_RX
+    */
+    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_2|GPIO_PIN_3);
+
+  /* USER CODE BEGIN USART2_MspDeInit 1 */
+
+  /* USER CODE END USART2_MspDeInit 1 */
+  }
+
+}
+
+/* USER CODE BEGIN 1 */
+
+/* USER CODE END 1 */
 
 /**
   * @}
