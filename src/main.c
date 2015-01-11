@@ -68,7 +68,7 @@ volatile float TEMPERATURE_Value;
 
 /* Private functions ---------------------------------------------------------*/
 static void floatToInt(float in, int32_t *out_int, int32_t *out_dec, int32_t dec_prec);
-
+static float celsius2fahrenheit(float c);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_USART2_UART_Init(void);
@@ -133,7 +133,8 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	        BSP_HUM_TEMP_GetHumidity((float *)&HUMIDITY_Value);
 	        BSP_HUM_TEMP_GetTemperature((float *)&TEMPERATURE_Value);
 	        floatToInt(HUMIDITY_Value, &d1, &d2, 2);
-	        floatToInt(TEMPERATURE_Value, &d3, &d4, 2);
+	        float tempF = celsius2fahrenheit(TEMPERATURE_Value);
+	        floatToInt(tempF, &d3, &d4, 2);
             sprintf(dataOut, "HUM: %d.%02d     TEMP: %d.%02d\n\r", (int)d1, (int)d2, (int)d3, (int)d4);
 	        printf(dataOut);
 	    }
@@ -155,6 +156,10 @@ static void floatToInt(float in, int32_t *out_int, int32_t *out_dec, int32_t dec
     *out_dec = (int32_t)trunc(in*pow(10,dec_prec));
 }
 
+static float celsius2fahrenheit(float c)
+{
+  return 32 + (c * (180.0 / 100.0));
+}
 
 /** System Clock Configuration
 */
